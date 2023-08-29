@@ -87,3 +87,26 @@ dist: clean ## builds source and wheel package
 
 install: clean ## install the package to the active Python's site-packages
 	python setup.py install
+
+
+IMAGE_NAME := aider_harness
+
+# Docker run environment variables
+CODE_PATH_ENV := /app/code
+AIDER_PATH_ENV := /app/aider
+
+
+build:
+	@docker build -t $(IMAGE_NAME) .
+
+# Run Docker container
+run:
+	@docker run -e CODE_PATH=$(CODE_PATH_ENV) -e AIDER_PATH=$(AIDER_PATH_ENV) -v $(shell pwd):$(AIDER_PATH_ENV) --network git-server-network $(IMAGE_NAME)
+
+run-debug:
+	docker run -d -e CODE_PATH=$(CODE_PATH_ENV) -e AIDER_PATH=$(AIDER_PATH_ENV) -v $(shell pwd):$(AIDER_PATH_ENV) --network git-server-network --name agent_harness $(IMAGE_NAME) tail -f /dev/null
+
+
+# Remove Docker image
+clean:
+	@docker rmi -f $(IMAGE_NAME)
