@@ -10,7 +10,7 @@ with open("README.rst") as readme_file:
 with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
-requirements = ["Click>=7.0", "aider-chat==0.13.0", "agent_harness==0.1.1"]
+requirements = ["Click>=7.0", "aider-chat==0.12.0", "agent_harness==0.1.5"]
 
 test_requirements = [
     "pytest>=3",
@@ -19,16 +19,15 @@ test_requirements = [
 setup(
     author="Douglas Schonholtz",
     author_email="douglas@ai-maintainer.com",
-    python_requires=">=3.6",
+    python_requires=">=3.9",
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",
         "Natural Language :: English",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
     ],
     description="Python Boilerplate contains all the boilerplate you need to create a Python package.",
     entry_points={

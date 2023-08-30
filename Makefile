@@ -101,10 +101,10 @@ build:
 
 # Run Docker container
 run:
-	@docker run -e CODE_PATH=$(CODE_PATH_ENV) -e AIDER_PATH=$(AIDER_PATH_ENV) -v $(shell pwd):$(AIDER_PATH_ENV) --network git-server-network $(IMAGE_NAME)
+	@docker run -e CODE_PATH=$(CODE_PATH_ENV) -e AIDER_PATH=$(AIDER_PATH_ENV) -e OPENAI_API_KEY=$(OPENAI_API_KEY) -v $(shell pwd):$(AIDER_PATH_ENV) --network platform-network $(IMAGE_NAME)
 
 run-debug:
-	docker run -d -e CODE_PATH=$(CODE_PATH_ENV) -e AIDER_PATH=$(AIDER_PATH_ENV) -v $(shell pwd):$(AIDER_PATH_ENV) --network git-server-network --name agent_harness $(IMAGE_NAME) tail -f /dev/null
+	docker run -e CODE_PATH=$(CODE_PATH_ENV) -e AIDER_PATH=$(AIDER_PATH_ENV) -v $(shell pwd):$(AIDER_PATH_ENV) --network platform-network --name ${IMAGE_NAME} $(IMAGE_NAME) tail -f /dev/null
 
 
 # Remove Docker image
