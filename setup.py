@@ -10,7 +10,7 @@ with open("README.rst") as readme_file:
 with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
-requirements = ["Click>=7.0", "aider-chat==0.12.0", "agent_harness==0.1.5"]
+requirements = ["Click>=7.0", "aider-chat==0.12.0", "agent_harness>=0.1.5"]
 
 test_requirements = [
     "pytest>=3",

@@ -3,7 +3,7 @@
 from agent_harness.agent_harness import (
     register_user,
     register_agent,
-    get_benchmark_ids,
+    get_benchmarks,
     start_benchmark,
     ask_question,
     submit_artifact,
@@ -23,16 +23,16 @@ import os
 import glob
 
 
-def get_or_make_user(username, password, email, host):
+def get_or_make_user(username, password, email, host, git_host):
     """Get or make a user."""
     client = register_user(username, password, email, host)
     if not client:
-        client = PythonClientUser(username, password, host)
+        client = PythonClientUser(username, password, host, git_host)
     return client
 
 
 def benchmark(client):
-    agents = fetch_users_agents(client)["agents"]
+    agents = fetch_users_agents(client)
     print("agents:", agents)
     agent_id = None
     for agent in agents:
@@ -43,7 +43,7 @@ def benchmark(client):
     if not agent_id:
         agent_id = register_agent(client, "ai-maintainer-aider-agent")
 
-    benchmark_ids = get_benchmark_ids(client)
+    benchmark_ids = get_benchmarks(client)
     code_path = os.environ.get("CODE_PATH")
     if not code_path:
         # code_path = "/tmp/code"
@@ -51,7 +51,7 @@ def benchmark(client):
     for benchmark_id in benchmark_ids:
         # this will create a ticket for the benchmark, assign it to your agent
         # clone the code into your workspace, and then wait for you to submit a completed artifact.
-        fork, bid_id, ticket = start_benchmark(
+        fork, bid_id, ticket, cloned_path = start_benchmark(
             client, benchmark_id, code_path, agent_id
         )
 
@@ -63,10 +63,13 @@ def benchmark(client):
 
         # get the task text and run the agent
         task_text = ticket["description"]
-        aider_path = os.environ.get("AIDER_PATH")
-        _run_aider(code_path, aider_path, task_text)
+        aider_path = os.environ.get("AIDER_PATH", None)
+        if not aider_path:
+            raise Exception("AIDER_PATH environment variable not set!")
+        print("AiderPath: ", aider_path)
+        _run_aider(cloned_path, aider_path, task_text)
 
-        submit_artifact(client, fork, bid_id, code_path)
+        submit_artifact(client, fork, ticket["code"]["repo"], bid_id, cloned_path)
         # Our evaluation harness will automatically evaluate your code and give you a score, which you will be able to find in our UI
         # at AI-Maintainer.com :)
 
@@ -124,11 +127,12 @@ def _get_files_with_exts(
 
 def main():
     """Main function."""
-    username = "aider_user5"
-    password = "aider_user5"
+    username = "aider_user6"
+    password = "aider_user6!"
     email = "aider_email@email.com"
-    host = "http://marketplace-api:8080/api/v1"
-    client = get_or_make_user(username, password, email, host)
+    host = "https://marketplace-api-7ovqsdkn2q-uc.a.run.app/api/v1"
+    git_host = "https://git-server-7ovqsdkn2q-uc.a.run.app"
+    client = get_or_make_user(username, password, email, host, git_host)
     benchmark(client)
 
 

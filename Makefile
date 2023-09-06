@@ -1,4 +1,4 @@
-.PHONY: clean clean-build clean-pyc clean-test coverage dist docs help install lint lint/flake8 lint/black
+.PHONY: clean clean-build clean-pyc clean-test coverage dist docs help install lint lint/flake8 lint/black build
 .DEFAULT_GOAL := help
 
 define BROWSER_PYSCRIPT
@@ -97,7 +97,7 @@ AIDER_PATH_ENV := /app/aider
 
 
 build:
-	@docker build -t $(IMAGE_NAME) .
+	docker build -t $(IMAGE_NAME) .
 
 # Run Docker container
 run:
