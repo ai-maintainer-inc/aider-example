@@ -21,6 +21,7 @@ import openai
 # import ability to get env variables
 import os
 import glob
+import time
 
 
 def get_or_make_user(username, password, email, host, git_host):
@@ -43,7 +44,7 @@ def benchmark(client):
     if not agent_id:
         agent_id = register_agent(client, "ai-maintainer-aider-agent")
 
-    benchmark_ids = get_benchmarks(client)
+    benchmark_ids = get_benchmarks(client, after="2023-09-04T17:21:19.73387Z")
     code_path = os.environ.get("CODE_PATH")
     if not code_path:
         # code_path = "/tmp/code"
@@ -54,6 +55,7 @@ def benchmark(client):
         fork, bid_id, ticket, cloned_path = start_benchmark(
             client, benchmark_id, code_path, agent_id
         )
+        print("cloned_path: ", cloned_path)
 
         # get agent questions then submit them with
         # ask_question(client, ticket_id, question)
@@ -67,18 +69,61 @@ def benchmark(client):
         if not aider_path:
             raise Exception("AIDER_PATH environment variable not set!")
         print("AiderPath: ", aider_path)
+        # change the working directory so relative file paths are right to cloned_path
+        # os.chdir(cloned_path)
         _run_aider(cloned_path, aider_path, task_text)
+        # os.chdir(aider_path)
 
-        submit_artifact(client, fork, ticket["code"]["repo"], bid_id, cloned_path)
-        # Our evaluation harness will automatically evaluate your code and give you a score, which you will be able to find in our UI
-        # at AI-Maintainer.com :)
+        response = submit_artifact(
+            client, fork, ticket["code"]["repo"], bid_id, cloned_path
+        )
+        benchmark_artifact_id = response.body["artifactId"]
+        # print(f"response: {response.body}")
+        check_artifact_status(client, benchmark_artifact_id)
+
+
+def check_artifact_status(client, benchmark_artifact_id):
+    # get operator agents
+    response = client.instance.get_agents()
+    agents = list(response.body["agents"])
+    agent_id = agents[0]["agentId"]
+
+    # poll for benchmark artifact status
+    query_params = {
+        "agentId": agent_id,
+        "artifactId": benchmark_artifact_id,
+    }
+
+    status = None
+    for i in range(12):
+        response = client.instance.get_agent_artifacts(query_params=query_params)
+        artifacts = list(response.body["artifacts"])
+        if len(artifacts) == 0:
+            raise ValueError("No artifacts were created.")
+        elif artifacts[0]["status"] == "pending":
+            print("Waiting for evaluator. Sleeping for 5 seconds")
+            time.sleep(5)
+            continue
+
+        status = artifacts[0]["status"]
+        break
+
+    if not status:
+        raise ValueError("Failed to get benchmark artifact status")
+
+    # if status == "closed":
+    #     raise ValueError("Benchmark artifact closed")
+
+    print(
+        f"\n\nARTIFACT_ID: {benchmark_artifact_id} finished with status: {status}\n\n"
+    )
 
 
 def _run_aider(code_path, aider_path, task_text):
     io = InputOutput(
         pretty=True,
         yes=True,
-        chat_history_file="chat_history.txt",
+        chat_history_file="../chat_history.txt",
     )
 
     main_model = Model("gpt-4")
@@ -86,7 +131,8 @@ def _run_aider(code_path, aider_path, task_text):
 
     dump(main_model)
     dump(edit_format)
-    fnames = _get_files_with_exts(code_path, aider_path, ["py", "md"])
+    # get all files recursively in code_path by absolute path:
+    fnames = _get_files(code_path, aider_path)
     show_fnames = ",".join(map(str, fnames))
     print("fnames:", show_fnames)
 
@@ -100,36 +146,35 @@ def _run_aider(code_path, aider_path, task_text):
         use_git=False,
         stream=False,
         pretty=False,
-        verbose=True,
+        verbose=False,
     )
     coder.run(with_message=task_text)
 
 
-def _get_files_with_exts(
-    code_path,
-    aider_path,
-    exts,
-):
-    # Get all Python files in the code_path directory
+def _get_files(code_path, aider_path):
     all_files = []
-    for ext in exts:
-        all_files.extend(
-            glob.glob(
-                f"{code_path}/**/*.{ext}",
-                recursive=True,
-            )
-        )
-    # Make the file paths relative to the code_path
+
+    # List of directories to skip
+    exclude_dirs = [".benchmark", ".git"]
+
+    # Walk through the code_path and get all files, excluding ones in specified directories
+    for root, dirs, files in os.walk(code_path):
+        if any(ex_dir in root for ex_dir in exclude_dirs):
+            continue
+        for file in files:
+            all_files.append(os.path.join(root, file))
+
+    # Make the file paths relative to the aider_path
     all_files = [os.path.relpath(file, aider_path) for file in all_files]
-    print(all_files)
+
     return all_files
 
 
 def main():
     """Main function."""
-    username = "aider_user6"
-    password = "aider_user6!"
-    email = "aider_email@email.com"
+    username = "aider_user7"
+    password = "aider_user7!"
+    email = "aider_email2@email.com"
     host = "https://marketplace-api-7ovqsdkn2q-uc.a.run.app/api/v1"
     git_host = "https://git-server-7ovqsdkn2q-uc.a.run.app"
     client = get_or_make_user(username, password, email, host, git_host)
