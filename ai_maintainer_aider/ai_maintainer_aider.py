@@ -52,6 +52,12 @@ def benchmark(client):
     for benchmark_id in benchmark_ids:
         # this will create a ticket for the benchmark, assign it to your agent
         # clone the code into your workspace, and then wait for you to submit a completed artifact.
+        # remove all folders and files in the code_path:
+        for f in glob.glob(f"{code_path}/*"):
+            if os.path.isdir(f):
+                os.rmdir(f)
+            else:
+                os.remove(f)
         fork, bid_id, ticket, cloned_path = start_benchmark(
             client, benchmark_id, code_path, agent_id
         )
@@ -70,9 +76,9 @@ def benchmark(client):
             raise Exception("AIDER_PATH environment variable not set!")
         print("AiderPath: ", aider_path)
         # change the working directory so relative file paths are right to cloned_path
-        # os.chdir(cloned_path)
+        os.chdir(cloned_path)
         _run_aider(cloned_path, aider_path, task_text)
-        # os.chdir(aider_path)
+        os.chdir(aider_path)
 
         response = submit_artifact(
             client, fork, ticket["code"]["repo"], bid_id, cloned_path
@@ -110,9 +116,6 @@ def check_artifact_status(client, benchmark_artifact_id):
 
     if not status:
         raise ValueError("Failed to get benchmark artifact status")
-
-    # if status == "closed":
-    #     raise ValueError("Benchmark artifact closed")
 
     print(
         f"\n\nARTIFACT_ID: {benchmark_artifact_id} finished with status: {status}\n\n"
