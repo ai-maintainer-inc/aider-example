@@ -26,7 +26,7 @@ import time
 
 def get_or_make_user(username, password, email, host, git_host):
     """Get or make a user."""
-    client = register_user(username, password, email, host)
+    client = register_user(username, password, email, host, git_host)
     if not client:
         client = PythonClientUser(username, password, host, git_host)
     return client
@@ -44,7 +44,10 @@ def benchmark(client):
     if not agent_id:
         agent_id = register_agent(client, "ai-maintainer-aider-agent")
 
-    benchmark_ids = get_benchmarks(client, after="2023-09-04T17:21:19.73387Z")
+    benchmark_ids = get_benchmarks(
+        client,
+        after="2023-09-04T17:21:19.73387Z",  # title_search="endpoint"
+    )
     code_path = os.environ.get("CODE_PATH")
     if not code_path:
         # code_path = "/tmp/code"
@@ -53,11 +56,11 @@ def benchmark(client):
         # this will create a ticket for the benchmark, assign it to your agent
         # clone the code into your workspace, and then wait for you to submit a completed artifact.
         # remove all folders and files in the code_path:
-        for f in glob.glob(f"{code_path}/*"):
-            if os.path.isdir(f):
-                os.rmdir(f)
-            else:
-                os.remove(f)
+        # for f in glob.glob(f"{code_path}/*"):
+        #     if os.path.isdir(f):
+        #         os.rmdir(f)
+        #     else:
+        #         os.remove(f)
         fork, bid_id, ticket, cloned_path = start_benchmark(
             client, benchmark_id, code_path, agent_id
         )
@@ -77,7 +80,7 @@ def benchmark(client):
         print("AiderPath: ", aider_path)
         # change the working directory so relative file paths are right to cloned_path
         os.chdir(cloned_path)
-        _run_aider(cloned_path, aider_path, task_text)
+        _run_aider(".", aider_path, task_text)
         os.chdir(aider_path)
 
         response = submit_artifact(
@@ -135,7 +138,7 @@ def _run_aider(code_path, aider_path, task_text):
     dump(main_model)
     dump(edit_format)
     # get all files recursively in code_path by absolute path:
-    fnames = _get_files(code_path, aider_path)
+    fnames = _get_files(code_path)
     show_fnames = ",".join(map(str, fnames))
     print("fnames:", show_fnames)
 
@@ -154,7 +157,7 @@ def _run_aider(code_path, aider_path, task_text):
     coder.run(with_message=task_text)
 
 
-def _get_files(code_path, aider_path):
+def _get_files(code_path):
     all_files = []
 
     # List of directories to skip
@@ -168,18 +171,18 @@ def _get_files(code_path, aider_path):
             all_files.append(os.path.join(root, file))
 
     # Make the file paths relative to the aider_path
-    all_files = [os.path.relpath(file, aider_path) for file in all_files]
+    all_files = [os.path.relpath(file, code_path) for file in all_files]
 
     return all_files
 
 
 def main():
     """Main function."""
-    username = "aider_user7"
-    password = "aider_user7!"
-    email = "aider_email2@email.com"
-    host = "https://marketplace-api-7ovqsdkn2q-uc.a.run.app/api/v1"
-    git_host = "https://git-server-7ovqsdkn2q-uc.a.run.app"
+    username = "dschonholtz"
+    password = "default_secure!"
+    email = "douglas@ai-maintainer.com"
+    host = "https://platform.ai-maintainer.com/api/v1"
+    git_host = "https://git.ai-maintainer.com"
     client = get_or_make_user(username, password, email, host, git_host)
     benchmark(client)
 
