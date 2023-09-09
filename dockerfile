@@ -19,4 +19,4 @@ RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
 # Define the command to run on container start
-CMD ["python", "aider_ex.py"]
+CMD ["python", "main.py"]

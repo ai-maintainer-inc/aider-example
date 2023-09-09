@@ -11,11 +11,7 @@ build:
 
 # Run Docker container
 run:
-	@docker run -e OPENAI_API_KEY=$(OPENAI_API_KEY) -v $(shell pwd):$(HOME) --network platform-network $(IMAGE_NAME)
-
-run-debug:
-	docker run -v $(shell pwd):$(HOME) --network platform-network --name ${IMAGE_NAME} $(IMAGE_NAME) tail -f /dev/null
-
+	@docker run -e OPENAI_API_KEY=$(OPENAI_API_KEY) -v $(shell pwd):$(HOME) $(IMAGE_NAME)
 
 # Remove Docker image
 clean:
