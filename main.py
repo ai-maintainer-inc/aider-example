@@ -1,4 +1,4 @@
-from agent_harness.agent_harness import (
+from coder_evals import (
     get_benchmark_ids,
     start_benchmark,
     submit_artifact,
@@ -27,11 +27,12 @@ def benchmark():
     for benchmark_id in benchmark_ids:
         # this will create a ticket for the benchmark, assign it to your agent
         # clone the code into your workspace, and then wait for you to submit a completed artifact.
-        start_benchmark_result = start_benchmark(benchmark_id, code_path)        
-        _run_aider(start_benchmark_result.cloned_path, start_benchmark_result.ticket["description"])
-        status, logs = submit_artifact(
-            start_benchmark_result
+        start_benchmark_result = start_benchmark(benchmark_id, code_path)
+        _run_aider(
+            start_benchmark_result.cloned_path,
+            start_benchmark_result.ticket["description"],
         )
+        status, logs = submit_artifact(start_benchmark_result)
         print(f"\n\nBenchmark with ID {benchmark_id} completed with status {status}")
         print(f"Logs for benchmark {benchmark_id}:\n{logs}\n\n")
 
@@ -73,7 +74,7 @@ def _get_files(code_path):
             continue
         for file in files:
             all_files.append(os.path.join(root, file))
-    # Aider requires relative file paths. 
+    # Aider requires relative file paths.
     all_files = [os.path.relpath(file, code_path) for file in all_files]
     return all_files
 
