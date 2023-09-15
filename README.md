@@ -6,7 +6,7 @@ This implements the AI-Maintainer agent harness for benchmarking.
 
 If you want to rapidly benchmark or get test driven development type results on your agent this shows you how to quickly get set up.
 
-The library it references is the [AI-Maintainer Agent Harness](https://github.com/ai-maintainer-inc/agent_harness).
+The library it references is the [AI-Maintainer Coder Evals Repository](https://github.com/ai-maintainer-inc/agent_harness).
 
 To see what benchmarks we have started with, check out the [AI-Maintainer Benchmark](https://github.com/ai-maintainer-inc/benchmarks).
 
