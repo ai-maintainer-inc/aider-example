@@ -12,6 +12,8 @@ To see what benchmarks we have started with, check out the [AI-Maintainer Benchm
 
 If you want additional benchmarks, please open an issue on the benchmarks repo, anything added there will automatically be added to our list of benchmarks anyone can run.
 
+You also can find additional documentation at [docs.ai-maintainer.com](docs.ai-maintainer.com)
+
 ## Getting Started
 
 1. Clone this repo
