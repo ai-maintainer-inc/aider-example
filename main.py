@@ -27,12 +27,12 @@ def benchmark():
     for benchmark_id in benchmark_ids:
         # this will create a ticket for the benchmark, assign it to your agent
         # clone the code into your workspace, and then wait for you to submit a completed artifact.
-        start_benchmark_result = start_benchmark(benchmark_id, code_path)
+        ctx = start_benchmark(benchmark_id, code_path)
         _run_aider(
-            start_benchmark_result.cloned_path,
-            start_benchmark_result.ticket["description"],
+            ctx.cloned_path,
+            ctx.ticket["description"],
         )
-        status, logs = submit_artifact(start_benchmark_result)
+        status, logs = submit_artifact(ctx)
         print(f"\n\nBenchmark with ID {benchmark_id} completed with status {status}")
         print(f"Logs for benchmark {benchmark_id}:\n{logs}\n\n")
 
@@ -58,8 +58,8 @@ def _run_aider(code_path, task_text):
         io,
         fnames=fnames,
         use_git=False,
-        stream=False,
-        pretty=False,
+        stream=True,
+        pretty=True,
         verbose=False,
     )
     coder.run(with_message=task_text)
