@@ -3,6 +3,7 @@ from coder_evals import (
     start_benchmark,
     submit_artifact,
     maybe_register_user,
+    BenchmarkContext,
 )
 from aider.io import InputOutput
 from aider.coders import Coder
@@ -16,6 +17,7 @@ import docker
 from docker.models.containers import Container
 import uuid
 from typing import Tuple
+from textwrap import dedent
 
 
 def docker_eval(dockerfile_subdir: str) -> Tuple[bool, str]:
@@ -47,9 +49,7 @@ def docker_eval(dockerfile_subdir: str) -> Tuple[bool, str]:
 
 def _local_eval(path: str) -> bool:
     success, logs = docker_eval(path)
-    print(f"Local eval success: {success}")
-    print(f"Local eval logs:\n{logs}")
-    return success
+    return success, logs
 
 
 def benchmark():
@@ -66,21 +66,15 @@ def benchmark():
         # this will create a ticket for the benchmark, assign it to your agent
         # clone the code into your workspace, and then wait for you to submit a completed artifact.
         ctx = start_benchmark(benchmark_id, code_path)
-        _run_aider(
-            ctx.cloned_path,
-            ctx.ticket["description"],
-        )
-        if True:
-            dpath = os.path.join(ctx.cloned_path, ".benchmark")
-            print(f"Running local eval for {dpath}")
-            success = _local_eval(dpath)
-            print(f"Local eval success: {success}")
+        _run_aider(ctx)
         status, logs = submit_artifact(ctx)
         print(f"\n\nBenchmark with ID {benchmark_id} completed with status {status}")
         print(f"Logs for benchmark {benchmark_id}:\n{logs}\n\n")
 
 
-def _run_aider(code_path, task_text):
+def _run_aider(ctx: BenchmarkContext):
+    code_path = ctx.cloned_path
+    task_text = ctx.ticket["description"]
     # aider works best in the directory where the code is cloned.
     aider_path = os.getcwd()
     os.chdir(code_path)
@@ -106,6 +100,25 @@ def _run_aider(code_path, task_text):
         verbose=False,
     )
     coder.run(with_message=task_text)
+
+    # run local eval
+    dpath = os.path.join(ctx.cloned_path, ".benchmark")
+    print(f"Running local eval for {dpath}")
+    success, logs = _local_eval(dpath)
+    print(f"Local eval success: {success}")
+    if not success:
+        msg = dedent(
+            f"""
+            Local eval failed with the following error:
+            {logs}
+            """
+        )
+        coder.run(with_message=msg)
+
+    print(f"Running local eval for {dpath}")
+    success, logs = _local_eval(dpath)
+    print(f"Local eval success: {success}")
+
     os.chdir(aider_path)
 
 
