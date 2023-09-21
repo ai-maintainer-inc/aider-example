@@ -12,11 +12,49 @@ import openai
 import os
 import shutil
 from dotenv import load_dotenv
+import docker
+from docker.models.containers import Container
+import uuid
+from typing import Tuple
+
+
+def docker_eval(dockerfile_subdir: str) -> Tuple[bool, str]:
+    client = docker.from_env()
+    image_tag = str(uuid.uuid4())
+    parent_dir = os.path.dirname(dockerfile_subdir)
+    dockerfile_name = os.path.join(os.path.basename(dockerfile_subdir), "Dockerfile")
+
+    try:
+        image, build_logs = client.images.build(
+            path=parent_dir, tag=image_tag, dockerfile=dockerfile_name
+        )
+        logs = "".join([str(log) for log in build_logs])
+
+    except docker.errors.BuildError as e:
+        return False, str(e)
+    except Exception as e:
+        return False, str(e)
+
+    try:
+        stdout_bytes = client.containers.run(image=image_tag, remove=True, stdout=True)
+        stdout = stdout_bytes.decode("utf-8")
+        return True, stdout
+    except docker.errors.ContainerError as e:
+        return False, str(e)
+    except Exception as e:
+        return False, str(e)
+
+
+def _local_eval(path: str) -> bool:
+    success, logs = docker_eval(path)
+    print(f"Local eval success: {success}")
+    print(f"Local eval logs:\n{logs}")
+    return success
 
 
 def benchmark():
     benchmark_ids = get_benchmark_ids(
-        after="2023-09-04T17:21:19.73387Z",  # title_search="endpoint"
+        after="2023-09-04T17:21:19.73387Z", title_search="v2"
     )
     # default the code path to the current directory / .workspace if not set using path.
     code_path = os.environ.get("CODE_PATH", os.path.join(os.getcwd(), ".workspace"))
@@ -32,6 +70,11 @@ def benchmark():
             ctx.cloned_path,
             ctx.ticket["description"],
         )
+        if True:
+            dpath = os.path.join(ctx.cloned_path, ".benchmark")
+            print(f"Running local eval for {dpath}")
+            success = _local_eval(dpath)
+            print(f"Local eval success: {success}")
         status, logs = submit_artifact(ctx)
         print(f"\n\nBenchmark with ID {benchmark_id} completed with status {status}")
         print(f"Logs for benchmark {benchmark_id}:\n{logs}\n\n")
