@@ -67,12 +67,31 @@ def benchmark():
         # clone the code into your workspace, and then wait for you to submit a completed artifact.
         ctx = start_benchmark(benchmark_id, code_path)
         _run_aider(ctx)
+
+        for i in range(5):
+            # run local eval
+            dpath = os.path.join(ctx.cloned_path, ".benchmark")
+            print(f"Running local eval for {dpath}")
+            success, logs = _local_eval(dpath)
+            print(f"Local eval success: {success}")
+            if not success:
+                msg = dedent(
+                    f"""
+                    Local eval failed with the following error:
+                    {logs}
+                    """
+                )
+                print(f"Attempt {i} with feedback. Running aider with message: {msg}")
+                _run_aider(ctx, message=msg)
+            else:
+                break
+
         status, logs = submit_artifact(ctx)
         print(f"\n\nBenchmark with ID {benchmark_id} completed with status {status}")
         print(f"Logs for benchmark {benchmark_id}:\n{logs}\n\n")
 
 
-def _run_aider(ctx: BenchmarkContext):
+def _run_aider(ctx: BenchmarkContext, message: str = None):
     code_path = ctx.cloned_path
     task_text = ctx.ticket["description"]
     # aider works best in the directory where the code is cloned.
@@ -99,26 +118,10 @@ def _run_aider(ctx: BenchmarkContext):
         pretty=True,
         verbose=False,
     )
-    coder.run(with_message=task_text)
-
-    # run local eval
-    dpath = os.path.join(ctx.cloned_path, ".benchmark")
-    print(f"Running local eval for {dpath}")
-    success, logs = _local_eval(dpath)
-    print(f"Local eval success: {success}")
-    if not success:
-        msg = dedent(
-            f"""
-            Local eval failed with the following error:
-            {logs}
-            """
-        )
-        coder.run(with_message=msg)
-
-    print(f"Running local eval for {dpath}")
-    success, logs = _local_eval(dpath)
-    print(f"Local eval success: {success}")
-
+    if message:
+        coder.run(with_message=message)
+    else:
+        coder.run(with_message=task_text)
     os.chdir(aider_path)
 
 
