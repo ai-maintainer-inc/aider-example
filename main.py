@@ -47,14 +47,14 @@ def docker_eval(dockerfile_subdir: str) -> Tuple[bool, str]:
         return False, str(e)
 
 
-def _local_eval(path: str) -> bool:
+def _local_eval(path: str) -> Tuple[bool, str]:
     success, logs = docker_eval(path)
     return success, logs
 
 
 def benchmark():
     benchmark_ids = get_benchmark_ids(
-        after="2023-09-04T17:21:19.73387Z", title_search="v2"
+        after="2023-09-04T17:21:19.73387Z", title_search="v2 | state"
     )
     # default the code path to the current directory / .workspace if not set using path.
     code_path = os.environ.get("CODE_PATH", os.path.join(os.getcwd(), ".workspace"))
@@ -68,7 +68,7 @@ def benchmark():
         ctx = start_benchmark(benchmark_id, code_path)
         _run_aider(ctx)
 
-        for i in range(5):
+        for i in range(10):
             # run local eval
             dpath = os.path.join(ctx.cloned_path, ".benchmark")
             print(f"Running local eval for {dpath}")
@@ -77,6 +77,9 @@ def benchmark():
             if not success:
                 msg = dedent(
                     f"""
+                    Task description:
+                    {ctx.ticket["description"]}
+
                     Local eval failed with the following error:
                     {logs}
                     """
@@ -122,6 +125,10 @@ def _run_aider(ctx: BenchmarkContext, message: str = None):
         coder.run(with_message=message)
     else:
         coder.run(with_message=task_text)
+
+    # clear the chat history
+    coder.done_messages = []
+    coder.cur_messages = []
     os.chdir(aider_path)
 
 
@@ -145,4 +152,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    for i in range(1):
+        print(f"\nRunning benchmarks iteration {i}\n")
+        main()
