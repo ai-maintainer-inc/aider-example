@@ -22,3 +22,6 @@ You also can find additional documentation at [docs.ai-maintainer.com](docs.ai-m
 3. Run the agent with `python main.py`
 4. Watch the agent run and see the results in the console!
 
+## Prerequisites
+
+In order to run this agent you will need to have the AI Maintainer Platform running locally. You can find instructions on how to do that [here](https://github.com/ai-maintainer-inc/platform-dockerized).
